@@ -1,6 +1,6 @@
 Table of Contents 
 
-- [1. Introduction and Credits](#1-introduction-and-credits)
+- [1. Introduction](#1-introduction)
 - [2. Pre-Install](#2-pre-install)
 - [3. Installation](#3-installation)
 - [4. Post-Install](#4-post-install)
@@ -9,7 +9,7 @@ Table of Contents
 ---
 
 
-# 1. Introduction and Credits
+# 1. Introduction
 > I started this project as a personal reference document, but ended up formatting it as a guide since I think it will be helpful to many people out there who want the same type of install. 
 I will walk through and explain the rationale behind all the steps from beginning to end, towards installing what is (subjectively) a perfect arch linux install.
 
@@ -25,7 +25,7 @@ Then if you want a system like me, follow this guide for reference.
 4. Secure Boot
 5. Unified Kernel Images
 6. Dual Boot Support.
-7. ~~Snapshot Booting with rEFInd btrfs.~~
+7. Snapshot booting with limine
 8. System Maintainence and Best Practises.
 
 
@@ -38,7 +38,7 @@ Then if you want a system like me, follow this guide for reference.
 All the steps mentioned here should regardless work for you on an x86-64 machine. If you have an INTEL CPU and/or a NVIDIA GPU, there are some minor differences, and I will point them out.
 
 
-#### <mark style='background-color: #f44336;'> While I will try to explain what I'm doing here and why, this is not a beginner friendly guide. You need to have an understanding of the core concepts of linux and know your way around the terminal. </mark>
+> While I will try to explain what I'm doing here and why, this is not a beginner friendly guide. You need to have an understanding of the core concepts of linux and know your way around the terminal.
 
 
 A lot of the stuff I will talk about here, was hugely inspired by other people in the community and their work. Special Credits to:
@@ -47,7 +47,7 @@ A lot of the stuff I will talk about here, was hugely inspired by other people i
 2. [This guide based on fedora by Madhu@sysguides.](https://sysguides.com/install-fedora-with-snapshot-and-rollback-support)
 3. [And offcourse, the Arch Wiki.](https://wiki.archlinux.org/title/Main_page)
 
-Finally, I am  by no means an expert, so I welcome any and all feedback on this. Lets start:
+Finally, I am  by no means an expert, so I welcome all feedback on this. Lets start:
 
 ---
 ---
@@ -107,7 +107,7 @@ In this section, we will boot off the usb flash drive with the Arch ISO created 
 
 Plug in your usb with the Arch ISO, reboot to your PC's Motherboard settings (lookup how to for your model, generally it's by pressing the **F2**, **F10** or **Del** key during boot), and in the boot priority, set the usb as the first one to boot from. 
 
-#### <mark style='background-color: #f44336'> If secure boot is enabled, you will have to disable it.</mark>
+> If secure boot is enabled, you will have to disable it.
 	
 >Further in this guide, I will show you how to generate custom secure boot keys. We will sign our boot files with those keys, so that we can then re-enable secure boot.
 
@@ -210,9 +210,9 @@ Verify your partition type GUID with:
 lsblk -p -o NAME,PARTTYPE
 ```
 
-Your Root Filesystem (/dev/sdx2 or /dev/nvmenxn1p2) should have a guid of 4f68bce3-e8cd-4db1-96e7-fbcaf984b709. 
+Your Root Filesystem ${DISK}2 should have a guid of 4f68bce3-e8cd-4db1-96e7-fbcaf984b709. 
 
-The EFI parition should have the guid of c12a7328-f81f-11d2-ba4b-00a0c93ec93b
+The EFI parition ${DISK}1 should have the guid of c12a7328-f81f-11d2-ba4b-00a0c93ec93b
 
 Run **lsblk** to verify your partition sizes.
 
@@ -325,7 +325,7 @@ This is the subvolume layout I personally use, and which has worked well for me:
 
 >Steam by default uses folders other than the **/home/\$USER/Games** to download games, but this can very easily be changed in Steam settings. Apps like Heroic Games Launcher by default use the /home/$USER/Games folder, so no issues there.
 
->I am making the whole of */var* into one subvolume. This is not recommended by arch, as pacman stores it's cache in the */var/cache/pacman* directory. 
+>I am making the whole of **/var** into one subvolume. This is not recommended by arch, as pacman stores it's cache in the */var/cache/pacman* directory. 
 But I am going to configure pacman cache to be in the */tmp* directory, you can read the rationale behind this in this [reddit post](https://www.reddit.com/r/archlinux/comments/1hgbl1k/what_is_varcachepackagepkg_and_why_is_it_so_large/). 
 But essentially, I am preferring to not save any pacman cache, so it doesnt matter to me.
 
@@ -419,7 +419,7 @@ Now, I will install the base required packages for an Arch Linux install using t
 	
 ```
 pacman -Sy archlinux-keyring
-pacstrap -K /mnt base base-devel linux linux-firmware linux-headers amd-ucode cryptsetup btrfs-progs efibootmgr limine dosfstools networkmanager sudo openssh vim reflector rsync arch-install-scripts xdg-user-dirs
+pacstrap -K /mnt base base-devel linux linux-firmware linux-headers amd-ucode cryptsetup btrfs-progs efibootmgr limine dosfstools networkmanager sudo openssh vim reflector rsync arch-install-scripts xdg-user-dirs git
 ```
 
 > Some of these packages are mandatory, others are essential. You can lookup what they do in case you're curious.
@@ -461,7 +461,7 @@ arch-chroot /mnt
 	locale-gen
 	```
 
-	Then run the following command and provide appropriate input as asked (go with defaults if in doubt):
+	Then run the following command and provide appropriate inputs when asked (go with defaults if in doubt):
 
 	```
 	systemd-firstboot --prompt
@@ -474,14 +474,14 @@ arch-chroot /mnt
 		```
 		vim /etc/pacman.conf
 		```
-		Under misc option, uncomment the first two lines and add the third line:
+		Under misc option, make sure the following lines are added/uncommented:
 
 		---
-		<span style="background-color:green;">
-		Color <br>
-		ParallelDownloads = 5 <br>
+		<pre style="background-color:green;">
+		Color
+		ParallelDownloads = 5
 		ILoveCandy
-		</span>
+		</pre>
 
 		---
 
@@ -500,9 +500,9 @@ arch-chroot /mnt
 		Remove the '#' from the line starting with #CacheDir, and make it look like:
 
 		---
-		<mark style="background-color:green;"> 
+		<pre style="background-color:green;"> 
 		CacheDir     = /tmp/cache-pacman/pkg/ 
-		</mark>
+		</pre>
 		
 		---
 
@@ -532,9 +532,9 @@ arch-chroot /mnt
 	Uncomment by removing the '#' of the line starting with '# %wheel', below the comment saying "Uncomment to allow members of group wheel to execute any command"
 
 	---
-	<mark style="background-color: green;">
+	<pre style="background-color: green;">
 	%wheel ALL=(ALL:ALL) ALL 
-	</mark>
+	</pre>
 
 	---
 
@@ -542,9 +542,9 @@ arch-chroot /mnt
 	Add the following line to the **/etc/sudoers** file using *visudo* to see a funny message everytime you enter a wrong password:
 
 	---
-	<mark style="background-color: green;">
+	<pre style="background-color: green;">
 	Defaults insults
-	</mark>
+	</pre>
 	
 	---
 
@@ -557,18 +557,16 @@ arch-chroot /mnt
  	chown -R sabino:sabino /home/sabino/*
 	mount -o subvol=@mozilla /dev/mapper/root /home/sabino/.mozilla
 	mount -o subvol=@ssh /dev/mapper/root /home/sabino/.ssh
+	mount -o subvol=@games /dev/mapper/root /home/sabino/Games
 	chown -R sabino:sabino /home/sabino/*
 	```
-5. Create Default Home folders (Downloads, Documents, etc.) :
-	```
-	xdg-user-dirs-update
-	```
+
 
 <br><br>
 
 ### 12. Generate fstab
 
-> Fstab is a file referenced by the system during boot to mount your drives/partitions to the correct location. 
+> fstab is a file referenced by the system during boot to mount your drives/partitions to the correct location. 
 Since we have already mounted our drives, we will use the **genfstab** utility to output the fstab file with the options we chose earlier, and save it, so that in the future these options are used by default.
 
 ```
@@ -577,36 +575,24 @@ touch /etc/fstab				 -> It might already exist
 genfstab -U / >> /etc/fstab
 ```
 
-<details>
-<summary>Why am I using fstab when discoverable partitions exist?</summary>
-
-Discoverable partitons is a cool feature which can automount your drives, and can fully be used in this install, as our Unified Kernel Image uses the systemd initramfs hook.
-However, I will still manually define my mount points in fstab. This is because:
-1. I don't have an option of defining my mount options, and I don't want them to be the system defaults
-2. I will still have to mount my btrfs subvolumes manually, so why not do it all myself?
-3. I don't like the abstraction, I prefer to setup my system myself.
-</details>
-
 <br><br>
 
 ### 13. Setting up SWAP (optional but recommended)
 For Swap, I will use Zswap along with a swap file. Earlier I used to use Zram, but I've decided that Zswap is the better option.
 
-1. The stable linux kernel has Zswap enabled by default. To configure additinal settings and make them persist, we can add them to the kernel cmdline (/etc/kernel/cmdline):
-	```
-	zswap.enabled=1 zswap.shrinker_enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=30
-	```
-2. To create a Swap file on a btrfs system, follow the below instructions:
+
+1. Creating the swapfile:
 	```
 	btrfs filesystem mkswapfile --size 16G --uuid clear /var/swapfile
 	swapon /var/swapfile
 	```
 
-	The swapfile can be configured in fstab as follows:
+	Then add the below line in fstab:
 	```
 	/var/swapfile	none	swap	defaults	0	0
 	```
-3. To allow hibernation (suspend to disk), it needs to be setup in the kernel parameters.
+
+2. To allow hibernation (suspend to disk), it needs to be setup in the kernel parameters.
 	First, we need to find the location of our swapfile to pass to the kernel. This can be found by using:
 	```
 	btrfs inspect-internal map-swapfile -r /var/swapfile
@@ -614,9 +600,13 @@ For Swap, I will use Zswap along with a swap file. Earlier I used to use Zram, b
 
 	Note down the number output by the above command and add it to /etc/kernel/cmdline as:
 	```
-	resume=/dev/mapper/root resume_offset=<number>
+	echo "resume=/dev/mapper/root resume_offset=<number>" >> /etc/kernel/cmdline
 	```
 
+3. The stable linux kernel has Zswap enabled by default. To configure additinal settings and make them persist, we can add them to the kernel cmdline (/etc/kernel/cmdline):
+	```
+	echo "zswap.enabled=1 zswap.shrinker_enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=30" >> /etc/kernel/cmdline
+	```
 
 <br>
 
@@ -642,9 +632,9 @@ vim /etc/mkinitcpio.conf
 Edit the line starting with *HOOKS* in mkinitcpio.conf to look like this:
 
 ---
-<mark style="background-color:green"> 
+<pre style="background-color:green"> 
 HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole sd-encrypt block filesystems fsck) 
-</mark>
+</pre>
 
 ---
 
@@ -661,12 +651,8 @@ Make the file look like this:
 All_config="/etc/mkinitcpio.conf" <br>
 ALL_kver="/boot/vmlinuz-linux" <br>
 PRESETS=('default', 'fallback') <br>
-#default_config="/etc/mkinitcpio.conf" <br>
-#default_image="/boot/initramfs-linux.img" <br>
 default_uki="/efi/EFI/Linux/arch-linux.efi" <br>
 default_options="--splash /usr/share/systemd/bootctl/splash-arch.bmp" <br>
-#fallback_config="/etc/mkinitcpio.conf" <br>
-#fallback_image="/boot/initramfs-linux-fallback.img" <br>
 fallback_uki="/efi/EFI/Linux/arch-linux-fallback.efi" <br>
 fallback_options="-S autodetect"
 </mark>
@@ -693,10 +679,8 @@ mkinitcpio -P
 Using the below commands, I will enable networking using systemd-resolve for dns resolution and NetworkManager to manage networks. An alternative to NetworkManager is systemd-networkd, but I will mask it, as I prefer NetworkManager. I will also enable reflector to update pacman mirrors weekly, and sshd to enable ssh.
 
 ```
-systemctl enable systemd-resolved NetworkManager
+systemctl enable systemd-resolved NetworkManager sshd reflector.timer
 systemctl mask systemd-networkd
-systemctl enable reflector.timer
-systemctl enable sshd
 ```
 For reflector, you should edit the file /etc/xdg/reflector/reflector.conf, and specify option specific to you. eg.:
 
@@ -724,36 +708,36 @@ My file looks like this:
 
 ### 16. Bootloader Installation
 
-> I will be installing Limine relying on our Unified Kernel Image and systemd's discoverable partitions to automatically recognize and try to decrypt the root partition. If you decide to use grub, you have to so some more setup in the crypttab file. [Read More](https://bbs.archlinux.org/viewtopic.php?id=290148)
+> I will be installing Limine, relying on our Unified Kernel Image and systemd's discoverable partitions to automatically recognize and try to decrypt the root partition. If you decide to use grub, you have to so [some more setup in the crypttab file.](https://bbs.archlinux.org/viewtopic.php?id=290148)
 
 In this step, I will install the Limine bootloader on the /efi partition and configure it to boot our Unified Kernel Image. Then I will reboot to the Motherboard settings:
 
 ```
 mkdir -p /efi/EFI/limine
-cp /use/share/limine/BOOTX64.EFI /efi/EFI/limine/
+cp /usr/share/limine/BOOTX64.EFI /efi/EFI/limine/
 ```
 
 Then to create an entry for limine in NVRAM:
 ```
-efibootmgr --create --disk $DISK --part 1 --label "Arch Linux Limine Boot" --loader "\EFI\limine\BOOTX64.EFI" --unicode
+efibootmgr --create --disk $DISK --part 1 --label "Limine Bootloader Arch" --loader "\EFI\limine\BOOTX64.EFI" --unicode
 ```
 
-We also need to create some basic setup for limine:
+We also need to so some basic configuration for limine:
 ```
 vim /efi/EFI/limine/limine.conf
 ```
 
 ---
 <pre style="background-color:green">
-timeout: 5<br>
+timeout: 5
 
-/Arch Linux<br>
-    protocol: efi<br>
-    path: boot():/EFI/Linux/arch-linux.efi<br>
+/Arch Linux
+    protocol: efi
+    path: boot():/EFI/Linux/arch-linux.efi
 
-/Arch Linux (fallback)<br>
-    protocol: efi<br>
-    path: boot():/EFI/Linux/arch-linux-fallback.efi<br>
+/Arch Linux (fallback)
+    protocol: efi
+    path: boot():/EFI/Linux/arch-linux-fallback.efi
 </pre>
 ---
 
@@ -767,11 +751,12 @@ systemctl reboot --firmware-setup
 ```
 
 
-In the Firmware setup menu, select the entry for Arch/The Disk as the **First Priority Entry** and Save the settings.
-You will be asked to enter the disk encryption password, post which you can login and use the your new Arch System.
+In the Firmware setup menu, select the entry titled "Limine Bootloader Arch" as the **First Priority Entry** and save the settings.
+
+On boot, limine should show up and you will have the option to select your kernel (Arch vs Arch fallback). Selected Arch and the boot sequence will begin. You will be asked to enter the disk encryption password, post which you can login and use the your new Arch System.
 
 
-**Congrats, we have a minimal arch linux system installed.**
+**Congrats, you have a vanilla arch linux system installed.**
 
 <br>
 
@@ -794,7 +779,34 @@ substitue \<wifi-name> for wifi name and enter password to connect.
 
 
 ### 1. Update Pacman and install some essential packages:
-1. Drivers and Codecs
+
+1. Enable the multilib repository [Read more](https://wiki.archlinux.org/title/Official_repositories#)
+
+    I will be enabling the Multilib repo (because Steam isn't available on the default repo as it's a 32 bit application).
+		
+	```
+	vim /etc/pacman.conf
+	```
+		
+	Uncomment the below lines by removing the '#'
+	
+	---
+	<pre style="background-color: green;">
+	[multilib]
+	Include = /etc/pacman.d/mirrorlist
+	</pre>
+
+	---
+
+	
+
+	Then run:
+
+	```
+	sudo pacman -Sy
+	```
+
+2. Installing Drivers and Codecs
 		
 	Generic:
 	```
@@ -803,44 +815,40 @@ substitue \<wifi-name> for wifi name and enter password to connect.
 
 	Amd GPU Specific:
 	```
-	sudo pacman -S vulkan-radeon lib32-mesa mesa-vdpau libva-mesa-driver
-	paru -S amdgpu_top
+	sudo pacman -S vulkan-radeon lib32-mesa
 	```
 
-	>The amdgpu-top package is a tui+gui application to monitor your gpu usage. It needs paru/yay installed, which I do in step 2.
-
 	#### <mark style='background-color:rgb(46, 152, 154)'> Nvidia GPU:</mark>
-	>I don't have an Nvidia GPU, so you have to test this part yourself, refer to this [link](https://github.com/korvahannu/arch-nvidia-drivers-installation-guide).
+	>I don't have an Nvidia GPU, so you have to test this part yourself, refer to this [link](https://wiki.archlinux.org/title/NVIDIA).
 	
-2. AUR Helper (Optional but recommended)
-	>I will install [paru](https://github.com/Morganamilo/paru) to help me download and install AUR packages. See also: [Yay](https://github.com/Jguer/yay)
+3. AUR Helper (Optional but recommended)
+	>I will install [yay](https://github.com/jguer/yay) to help me download and install AUR packages.
 				
 	```
 	sudo pacman -S --needed base-devel
-	git clone --depth 1 https://aur.archlinux.org/paru.git
-	cd paru
+	git clone https://aur.archlinux.org/yay.git
+	cd yay
 	makepkg -si
 	```
 
-	This command will take a long time and you will have to enter your password a couple of time. Be patient. Once it has finished successfully, you can cleanup the downloaded paru folder:
+	This command might take a long time and you will have to enter your password a couple of time. Be patient. Once it has finished successfully, you can cleanup the downloaded folder:
 	```
-	rm -rf paru
+	rm -rf yay
 	```
 	
-	>After this step, you will be able to use the command *paru -S \<package-name>* to install a package from the[AUR](https://aur.archlinux.org/). Be very careful installing packages from here.
+	>After this step, you will be able to use the command *yay -S \<package-name>* to install a package from the [AUR](https://aur.archlinux.org/). Be very careful when installing packages from there.
 
-3. Audio
+4. Audio
 		
 	```
-	sudo pacman -S pipewire pipewire-pulse wireplumber pavucontrol
+	sudo pacman -S pipewire pipewire-pulse wireplumber
 	```
 
-	>These won't be really relevant until we install a DE. Pavucontrol is a GUI for controlling audio, it makes it very easy to use.
 
 5. Utilities (Optional but HIGHLY recommended)
 			
 	```
-	sudo pacman -S git locate udisks2 unzip man-db man-pages wget htop
+	sudo pacman -S locate udisks2 unzip man-db man-pages wget htop
 	```
 
 
@@ -855,32 +863,6 @@ substitue \<wifi-name> for wifi name and enter password to connect.
 
 	You can search for any other applications you need on [Flathub](https://flathub.org/).
 
-   
-7. [Optional Repositories](https://wiki.archlinux.org/title/Official_repositories#)
-
-    I will be enabling the Multilib repo (because Steam isn't available on the default repo as it's a 32 bit application).
-		
-	```
-	vim /etc/pacman.conf
-	```
-		
-	Uncomment the below lines by removing the '#'
-	
-	---
-	<pre style="background-color: green;">
-	[multilib]<br>
-	Include = /etc/pacman.d/mirrorlist
-	</pre>
-
-	---
-
-	
-
-	Then run:
-
-	```
-	sudo pacman -Sy
-	```
  
 <br><br>
 
@@ -900,7 +882,7 @@ sudo refind-install
 
 - Refind has GUI support.
 - Multi OS Support (Windows, Linux, and MacOS)
-- It is customizable and can be made to look very pretty.
+- It is customizable and can be [made to look very pretty](https://refind-themes-collection.netlify.app/).
 - I want the main linux bootloader to do just that, and not have other fancy features and changes in configuration, improving realiability.
 </details>
 
@@ -1334,51 +1316,9 @@ Run the below commands in order to:
 
 <br><br>
 
-4. [Bluetooth](https://wiki.archlinux.org/title/Bluetooth)
 
-	The initial setup needed to have bluetooth working is:
-	```
-	sudo pacman -S bluez bluez-utils
-	sudo systemctl enable bluetooth
-	```
 
-	After this you can use a tui or gui app (documented in the link above)
-
-<br><br>
-
-5. Gaming - WIP
-   1. Steam 
-   2. Gamescope  
-   3. Heroic Games Launcher
-   4. Controller Support
-   5. [Gamemode](https://github.com/FeralInteractive/gamemode#requesting-gamemode)
-
-<br><br>
-
-6. Virtualization - WIP
-
-<br><br>
-
-7. [Power Management](https://wiki.archlinux.org/title/Power_management#)
-
-	You can use a tool like [powertop](https://github.com/fenrus75/powertop) to diagnose and fix any power consumption issues
-
-	
-	You can manage wifi and bluetooth using rfkill:
-	```
-	rfkill block bluetooth
-	rfkill block wifi
-	```
-
-	and enable it using 'rfkill unblock wifi'
-
-<br><br>
-
-8. [CPU Frequency Scaling](https://wiki.archlinux.org/title/CPU_frequency_scaling) - WIP
-
-<br><br>
-
-9. Firmware Upgrade
+4. Firmware Upgrades
 
 	Using [fwupd](https://github.com/fwupd/fwupd), you can upgrade the firmware of your hardware devices. 
 	This downloads updates from [Linux Vendor Firmware Service](https://fwupd.org/). 
