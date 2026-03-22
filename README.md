@@ -21,10 +21,10 @@ Then if you want a system like me, follow this guide for reference.
 
 1. Full Root Filesystem Encryption + Auto TPM unlocking.
 2. BTRFS Filesystem
-3. Snapper snapshots and rollbacks
+3. Snapshots and rollbacks using [Snapper](https://wiki.archlinux.org/title/Snapper)
 4. Secure Boot
 5. Unified Kernel Images
-6. Dual Boot (Existing Windows Install on a separate drive).
+6. Dual Boot Support.
 7. ~~Snapshot Booting with rEFInd btrfs.~~
 8. System Maintainence and Best Practises.
 
@@ -35,10 +35,10 @@ Then if you want a system like me, follow this guide for reference.
 2. AMD GPU (7900 GRE)
 3. Asrock Motherboard with UEFI support.
 
-All the steps mentioned here should regardless work for you on an x86-64 machine.. If you have an INTEL CPU and/or a NVIDIA GPU, there are some minor differences, and I will point them out.
+All the steps mentioned here should regardless work for you on an x86-64 machine. If you have an INTEL CPU and/or a NVIDIA GPU, there are some minor differences, and I will point them out.
 
 
-#### <mark style='background-color: #f44336;'> While I will try to explain what I'm doing here and why, this is not a noob friendly guide. You need to have an understanding of basic concepts of linux and know your way around the terminal. </mark>
+#### <mark style='background-color: #f44336;'> While I will try to explain what I'm doing here and why, this is not a beginner friendly guide. You need to have an understanding of the core concepts of linux and know your way around the terminal. </mark>
 
 
 A lot of the stuff I will talk about here, was hugely inspired by other people in the community and their work. Special Credits to:
@@ -62,7 +62,7 @@ Either use the BitTorrent download (needs a bit-torrent client installed on your
 <br><br>
 
 
-### 2. Verify the Downloaded Image (Optional but recommended)
+### 2. Verify the downloaded Image (Optional but recommended)
 
 From the same download page, download the PGP ISO Singature. If you have gnupg installed, run the below command from the same directory where both the signature and iso files are located:
 ```
@@ -90,7 +90,7 @@ More importantly, it allows you to have multiple iso images on the same disk. I 
 
 <br><br>
 
-### 4. Identify the Installation Target (Optional but recommended)
+### 4. Identify the Installation Target
 
 If you're like me, and are installing linux on a separate drive, while already having windows on another drive, you need to check and make sure to correctly identify the drive. In linux, you can list all your drives using the command 'lsblk'. It labels SATA drives as sda1,sda2,... and nvme drives as nvme0n1, nvme1n1, etc. To avoid nuking your windows install, make a note of the correct drive. You can identify drives by their labels, existing partition layouts, storage capacity, etc.
 
@@ -105,7 +105,7 @@ In this section, we will boot off the usb flash drive with the Arch ISO created 
 
 ### 1. Boot from the ISO
 
-Plug in your usb with the Arch ISO, reboot to your PC's Motherboard settings (lookup how to for your model, generally it's by pressing the F2, F10 or Del key during boot), and in the boot priority, set the usb as the first to boot from. 
+Plug in your usb with the Arch ISO, reboot to your PC's Motherboard settings (lookup how to for your model, generally it's by pressing the **F2**, **F10** or **Del** key during boot), and in the boot priority, set the usb as the first one to boot from. 
 
 #### <mark style='background-color: #f44336'> If secure boot is enabled, you will have to disable it.</mark>
 	
@@ -167,12 +167,12 @@ echo $DISK
 <br><br>
 
 ### 4. Partition your disk
-In this step, I will create a new GPT Partition table on the disk, and then create 2 partitions - a 1GB EFI partiton (also referred to as the ESP) and a Root partition on the remaining space.
+In this step, I will create a new GPT Partition table on the disk, and then create 2 partitions - a 4GB EFI partiton (also referred to as the ESP) and a Root partition on the remaining space.
 
 
-> I am seriously debating the size of the EFI partition. While 512Mb has been more than enough for me is the past, I have seen people recommend 1 GB. 
-I have a 1 Tb SSD on which I will be installing arch, so it's not a big deal for me, and as I plan to use this system long term, I don't want to have to deal with resizing the partition later, so I am making it 1 GB. 
-If you want to have it as 512Mb, use +512M instead of +1G in the 6th command below:
+> I am seriously debating the size of the EFI partition. While 512Mb has been more than enough for me is the past, I have seen people recommend more. 
+I have a 1 Tb SSD on which I will be installing arch, so it's not a big deal for me, and as I plan to use this system long term, I don't want to have to deal with resizing the partition later, so I am making it 4 GB. 
+If you want to have it as 512Mb, use +512M instead of +4G in the 6th command below:
 
 Type in the following commands in order (wherever it says default, just press the Enter key). Also note that whatever changes you do are not applied till you type the last command (w), so don't worry if you mess up anything, you can exit the prompt and restart.
 
@@ -182,7 +182,7 @@ g				   ---> Command to create a new gpt disk label
 n				   ---> Command to create a new partition
 *default*          ---> Asks for partition number, press Enter, as default selection is 1, which is correct.
 *default*		   ---> Asks for first sector, press Enter, as default is start of the Disk Space.
-+1G                ---> Asks for last sector, which sets size of partition 1, this command will make it 1 GB.
++4G                ---> Asks for last sector, which sets size of partition 1, this command will make it 4 GB.
 n                  ---> Command to create a new partition
 *default*          ---> Asks for partition number, press Enter, as default selection is 2, which is correct.
 *default*          ---> Asks for first sector, press Enter, as default is start of the Disk Space after previous partition.
@@ -202,7 +202,7 @@ For the first partition, I set the parition type as EFI, and for the second one 
 This setting of partition type, while technically not necessary, is essential, as this will associate a standard [Partition Type GUID](https://unix.stackexchange.com/questions/121176/whats-the-difference-between-the-partition-guid-code-and-partition-unique-guid) with it.
 
 
-This is then used by systemd auto mount (only if using systemd-boot) to recoginze our root partition to decrypt and mount it automatically without a crypttab or fstab file, using a feature called [Discoverable Partitions](https://www.freedesktop.org/software/systemd/man/latest/systemd-gpt-auto-generator.html). 
+This is then used by the systemd initramfs hook to recognize our root partition, decrypt, and mount it automatically without a crypttab or fstab file, using a feature called [Discoverable Partitions](https://www.freedesktop.org/software/systemd/man/latest/systemd-gpt-auto-generator.html). 
 
 Verify your partition type GUID with:
 
@@ -248,7 +248,7 @@ In the first command we formatted our disk with luks2, it will autogenerate the 
 In the second command, we open our encrypted drive, and give it the name of 'root'. From here on, our root partition isn't /dev/sda2 or /dev/nvme1n1p2, but rather it's /dev/mapper/root. 
 
 
-> For simplicity, you can thing of this as a drive inside another drive. The outer drive is the encryption container, and all our content will be on the inner drive.
+> For simplicity, you can think of this as a drive inside another drive. The outer drive is the encryption container, and all our content will be on the inner drive.
 
 <br>
 
@@ -294,7 +294,7 @@ blkid -o list
 
 ### 7. Btrfs Subvolumes
 > This section is a lot more subjective to the type of installation you prefer. Basically, since we are on a btrfs filesystem, and will be using the rollback functionality on the root subvolume, you can choose which folders on your root won't be rolled back in that transaction. <br>
-They can have their own rollback logic created. To do this, they need to be mounted as separate subvolumes. Choosing which folders should be subvolumes has no correct answer (through there are wrong answers).
+They can have their own rollback logic created. To do this, they need to be mounted as separate subvolumes. Choosing which folders should be subvolumes has no correct answer (though there are wrong answers).
 	
 	
 The archinstall script formats the following directories as subvolumes, using the '@' naming scheme:
@@ -315,7 +315,7 @@ This is the subvolume layout I personally use, and which has worked well for me:
 | ----------------- | ----------- | ------- |
 | @ | / | The root folder, which is also a separate subvolume below the BTRFS Root volume, and which we will rollback in case of any issues. |
 | @home | /home |  Home Folder where all your Data/Games/Configurations will reside. |
-| @mozilla | /home/$USER/.mozilla | The directory where your firefox data is stored. If you ever rollback your home directory, this will prevent any potential loss of browsing data. |
+| @mozilla | /home/$USER/.mozilla | The directory where your firefox data is stored. If you ever rollback your home directory, this will prevent any potential loss of browser data. |
 | @ssh | /home/$USER/.ssh | Same as above, to protect any ssh keys/configs you have. |
 | @games| /home/$USER/Games | All my games will be installed here to avoid issues when rolling back home. |
 | @opt | /opt |  This is where third party applications are installed.|
@@ -323,11 +323,11 @@ This is the subvolume layout I personally use, and which has worked well for me:
 | @snapshots | /.snapshots |  This subvolume will store snapshots of our @ subvolume (Managed via Snapper). |
 | @home-snapshots | /home/.snapshots | This subvolume will store snapshots of our @home subvolume (Managed via Snapper). |
 
->Steam by default uses another folders to download games, but this can very easily be changed. Apps like Heroic Games Launcher by default use the /home/$USER/Games folder, so no issues there.
+>Steam by default uses folders other than the **/home/\$USER/Games** to download games, but this can very easily be changed in Steam settings. Apps like Heroic Games Launcher by default use the /home/$USER/Games folder, so no issues there.
 
 >I am making the whole of */var* into one subvolume. This is not recommended by arch, as pacman stores it's cache in the */var/cache/pacman* directory. 
 But I am going to configure pacman cache to be in the */tmp* directory, you can read the rationale behind this in this [reddit post](https://www.reddit.com/r/archlinux/comments/1hgbl1k/what_is_varcachepackagepkg_and_why_is_it_so_large/). 
-But essentially, I am not saving any pacman cache, so it doesnt matter to me.
+But essentially, I am preferring to not save any pacman cache, so it doesnt matter to me.
 
 <br>
 
@@ -419,7 +419,7 @@ Now, I will install the base required packages for an Arch Linux install using t
 	
 ```
 pacman -Sy archlinux-keyring
-pacstrap -K /mnt base base-devel linux linux-firmware amd-ucode cryptsetup btrfs-progs dosfstools posix util-linux networkmanager sudo openssh vim reflector rsync arch-install-scripts xdg-user-dirs 
+pacstrap -K /mnt base base-devel linux linux-firmware linux-headers amd-ucode cryptsetup btrfs-progs efibootmgr limine dosfstools networkmanager sudo openssh vim reflector rsync arch-install-scripts xdg-user-dirs
 ```
 
 > Some of these packages are mandatory, others are essential. You can lookup what they do in case you're curious.
@@ -538,7 +538,7 @@ arch-chroot /mnt
 
 	---
 
-	Fun Easter egg:
+	Fun easter egg:
 	Add the following line to the **/etc/sudoers** file using *visudo* to see a funny message everytime you enter a wrong password:
 
 	---
@@ -580,7 +580,7 @@ genfstab -U / >> /etc/fstab
 <details>
 <summary>Why am I using fstab when discoverable partitions exist?</summary>
 
-Discoverable partitons is a cool feature which can automount your drives, and can fully be used in this install, as I will be using systemd-boot as my bootloader.
+Discoverable partitons is a cool feature which can automount your drives, and can fully be used in this install, as our Unified Kernel Image uses the systemd initramfs hook.
 However, I will still manually define my mount points in fstab. This is because:
 1. I don't have an option of defining my mount options, and I don't want them to be the system defaults
 2. I will still have to mount my btrfs subvolumes manually, so why not do it all myself?
@@ -589,56 +589,43 @@ However, I will still manually define my mount points in fstab. This is because:
 
 <br><br>
 
-### 13. Swap on Zram (Optional but recommended)
-For swap, I will use swap on zram instead of a separate swap partition. [Read More](https://wiki.archlinux.org/title/Zram)
+### 13. Setting up SWAP (optional but recommended)
+For Swap, I will use Zswap along with a swap file. Earlier I used to use Zram, but I've decided that Zswap is the better option.
 
-How it works is, when there are files on your RAM that are not actively being used, they can be compressed stored on Zram. While Zram uses part of RAM to store data, it compresses the data very efficiently so overall we get more performance. It's better than swap on a disk as RAM is faster than a disk.
-
-To create a Zram device, and use it as the swap, I will use a udev rule as documented on the wiki. Run the below 3 commands: 
-1. Enable to Zram module to load on boot
+1. The stable linux kernel has Zswap enabled by default. To configure additinal settings and make them persist, we can add them to the kernel cmdline (/etc/kernel/cmdline):
 	```
-	echo 'zram' > /etc/modules-load.d/zram.conf
+	zswap.enabled=1 zswap.shrinker_enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=30
 	```
-
-2. Create a udev rule to specify zram parameters (I have set size as 16G, adjust it to your liking):
+2. To create a Swap file on a btrfs system, follow the below instructions:
 	```
-	echo 'ACTION=="add", KERNEL=="zram0", ATTR{initstate}=="0", ATTR{comp_algorithm}="zstd", ATTR{disksize}="16G", RUN="/usr/bin/mkswap -U clear %N", TAG+="systemd"' > /etc/udev/rules.d/99-zram.rules
+	btrfs filesystem mkswapfile --size 16G --uuid clear /var/swapfile
+	swapon /var/swapfile
 	```
 
-	Don't create zram greater than twice the size of your physical RAM (Max expected compression ratio is 2:1, so more space will be wasted.)
-
-3. Modify the fstab file by adding this line at the very start:
+	The swapfile can be configured in fstab as follows:
 	```
-	/dev/zram0 none swap defaults,discard,pri=100 0 0
+	/var/swapfile	none	swap	defaults	0	0
 	```
-	
-4. Optimize Zram performance (optional) [Read More](https://wiki.archlinux.org/title/Zram#Optimizing_swap_on_zram)
+3. To allow hibernation (suspend to disk), it needs to be setup in the kernel parameters.
+	First, we need to find the location of our swapfile to pass to the kernel. This can be found by using:
 	```
-	echo 'vm.swappiness = 180' > /etc/sysctl.d/99-vm-zram-parameters.conf
-	echo 'vm.watermark_boost_factor = 0' >> /etc/sysctl.d/99-vm-zram-parameters.conf
-	echo 'vm.watermark_scale_factor = 125' >> /etc/sysctl.d/99-vm-zram-parameters.conf
-	echo 'vm.page-cluster = 00' >> /etc/sysctl.d/99-vm-zram-parameters.conf
+	btrfs inspect-internal map-swapfile -r /var/swapfile
 	```
 
-
-
-<span style="background-color: #3f50b5"> Note: If using Zram, disable [Zswap](https://wiki.archlinux.org/title/Zswap#Toggling_zswap) for better performance. It is enabled in kernels like linux-lts.</span>
-
-```
-echo 'zswap.enabled=0' >> /etc/kernel/cmdline
-```
+	Note down the number output by the above command and add it to /etc/kernel/cmdline as:
+	```
+	resume=/dev/mapper/root resume_offset=<number>
+	```
 
 
 <br>
 
-[Suspend and Hibernate](https://wiki.archlinux.org/title/Power_management/Suspend_and_hibernate#):
-Without going into too many details, these capabilites are built into the kernel and should be available to use directly. If you want to use hibernate, you need a separate swap partition (Swap on Zram can't be used) and need to do some additional setup which is explained in the link above. 
+[Suspend and Hibernate](https://wiki.archlinux.org/title/Power_management/Suspend_and_hibernate#) - Read more about how these things work.
 
-For my AMD system, with a B650 motherboard, I can see that the hardware supports S2Idle(Suspend) method aka saving data on RAM while powering all other components off. I am fine with this method.
-
-I did have troubles waking my system back up after suspending it (It seems to be motherboard specific). On reading the wiki, I can across this [solution](https://wiki.archlinux.org/title/Power_management/Suspend_and_hibernate#PC_will_not_wake_from_sleep_on_A520I_and_B550I_motherboards), which worked perfectly.
+I had some troubles waking my system back up after suspending it (It seems to be motherboard specific). On reading the wiki, I can across this [solution](https://wiki.archlinux.org/title/Power_management/Suspend_and_hibernate#PC_will_not_wake_from_sleep_on_A520I_and_B550I_motherboards), which worked perfectly.
 
 <br><br>
+
 
 ### 14. Generate Unified Kernel Images (Optional but HIGHLY recommended, there's no downside to doing this, the benefits are many.)
 [Unified Kernel Images](https://wiki.archlinux.org/title/Unified_kernel_image) is a concept of combining the kernel, microcode, and other binaries needed during boot, and generating a single efi file to boot from. This helps in maintainence also helps with secure boot management.
@@ -656,7 +643,7 @@ Edit the line starting with *HOOKS* in mkinitcpio.conf to look like this:
 
 ---
 <mark style="background-color:green"> 
-HOOKS=(base systemd autodetect modconf kms keyboard sd-vconsole sd-encrypt block filesystems fsck) 
+HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole sd-encrypt block filesystems fsck) 
 </mark>
 
 ---
@@ -737,14 +724,45 @@ My file looks like this:
 
 ### 16. Bootloader Installation
 
-> I will be installing systemd-boot relying on it to automatically recognize and try to decrypt the root partition. If you decide to use grub, you have to so some more setup in the crypttab file. [Read More](https://bbs.archlinux.org/viewtopic.php?id=290148)
+> I will be installing Limine relying on our Unified Kernel Image and systemd's discoverable partitions to automatically recognize and try to decrypt the root partition. If you decide to use grub, you have to so some more setup in the crypttab file. [Read More](https://bbs.archlinux.org/viewtopic.php?id=290148)
 
-In this step, I will install the systemd-boot bootloader on the /efi partition. Then I will reboot to the Motherboard settings:
+In this step, I will install the Limine bootloader on the /efi partition and configure it to boot our Unified Kernel Image. Then I will reboot to the Motherboard settings:
 
 ```
-bootctl install --esp-path=/efi
+mkdir -p /efi/EFI/limine
+cp /use/share/limine/BOOTX64.EFI /efi/EFI/limine/
+```
+
+Then to create an entry for limine in NVRAM:
+```
+efibootmgr --create --disk $DISK --part 1 --label "Arch Linux Limine Boot" --loader "\EFI\limine\BOOTX64.EFI" --unicode
+```
+
+We also need to create some basic setup for limine:
+```
+vim /efi/EFI/limine/limine.conf
+```
+
+---
+<pre style="background-color:green">
+timeout: 5<br>
+
+/Arch Linux<br>
+    protocol: efi<br>
+    path: boot():/EFI/Linux/arch-linux.efi<br>
+
+/Arch Linux (fallback)<br>
+    protocol: efi<br>
+    path: boot():/EFI/Linux/arch-linux-fallback.efi<br>
+</pre>
+---
+
+
+Exit chroot and reboot to firmware setup:
+
+```
 sync
-exit 
+exit
 systemctl reboot --firmware-setup
 ```
 
@@ -814,7 +832,7 @@ substitue \<wifi-name> for wifi name and enter password to connect.
 3. Audio
 		
 	```
-	sudo pacman -S pipewire pipewire-pulse pavucontrol
+	sudo pacman -S pipewire pipewire-pulse wireplumber pavucontrol
 	```
 
 	>These won't be really relevant until we install a DE. Pavucontrol is a GUI for controlling audio, it makes it very easy to use.
@@ -849,10 +867,10 @@ substitue \<wifi-name> for wifi name and enter password to connect.
 	Uncomment the below lines by removing the '#'
 	
 	---
-	<mark style="background-color: green;">
+	<pre style="background-color: green;">
 	[multilib]<br>
 	Include = /etc/pacman.d/mirrorlist
-	</mark>
+	</pre>
 
 	---
 
@@ -866,7 +884,7 @@ substitue \<wifi-name> for wifi name and enter password to connect.
  
 <br><br>
 
-### 2. Install rEFInd (Optional but HIGHLY recommended)
+### 2. Install rEFInd (Optional but recommended)
 
 Refind is a boot manager. Simply put, when starting your PC, it will allow you to choose between Windows and Linux. It can also be themed to make the boot process look pretty.
 
@@ -875,14 +893,13 @@ sudo pacman -S refind
 sudo refind-install
 ```
 
->Once you run the second command, refind should set itself as the primary boot option. If it doesn't, you can change it in the motherboard settings. But because of this, you should now see multiple options during boot, including the ability to choose between windows and arch. For Arch, I recommend using the systemd-boot option, instead of the kernel option. You can hide any options you don't want using the 'Delete' Key.
+>Once you run the second command, refind should set itself as the primary boot option. If it doesn't, you can change it in the motherboard settings. But because of this, you should now see multiple options during boot, including the ability to choose between windows and arch. For Arch, I recommend using the limine option, instead of the kernel option. You can hide any options you don't want using the 'Delete' Key.
 
 <details>
-<summary>Why do I need both rEFInd and systemd-boot? </summary>
+<summary>Why do I need both rEFInd and limine? </summary>
 
 - Refind has GUI support.
 - Multi OS Support (Windows, Linux, and MacOS)
-- rEFInd supports Btrfs Snapshot Booting
 - It is customizable and can be made to look very pretty.
 - I want the main linux bootloader to do just that, and not have other fancy features and changes in configuration, improving realiability.
 </details>
@@ -932,8 +949,7 @@ We will then use *sbctl sign -s \<filename>* to sign them.
 sudo sbctl verify
 sudo sbctl sign -s /efi/EFI/linux/arch-linux.efi
 sudo sbctl sign -s /efi/EFI/linux/arch-linux-fallback.efi
-sudo sbctl sign -s /efi/EFI/BOOT/BOOTX64.EFI
-sudo sbctl sign -s /efi/EFI/systemd/systemd-bootx64.efi
+sudo sbctl sign -s /efi/EFI/limine/BOOTX64.EFI
 sudo sbctl sign -s /efi/EFI/refind/drivers_x64/btrfs_x64.efi
 sudo sbctl sign -s /efi/EFI/refind/refind_x64.efi
 ```
@@ -982,7 +998,7 @@ Now go to your motherboard's firmware setup and enable secure boot. Check if it 
 
 	You can use this key to unlock the drive (assuming you are booted from an iso) using:
 	```
-	cryptsetup open --type luks /dev/sda2 root --key-file my-encryption-key
+	cryptsetup open --type luks /dev/your_disk_partition root --key-file my-encryption-key
 	```
 
 	<br>
@@ -1091,17 +1107,8 @@ There's a lot you can do in terms of hardening your system, here are some of the
 
 <br><br>
 
-### 6. Refind BTRFS (Skip for now)
 
-<mark style="background-color: #f44336;"> This doesn't work currently due to the use of unified kernel images and encryption [Read More](https://github.com/Venom1991/refind-btrfs/issues/32). You can skip this step, as it has no utility currently. I am looking for an alternative or a fix to this.</mark>
-```
-paru -S refind-btrfs
-sudo systemctl enable --now refind-btrfs
-```
-
-<br><br>
-
-### 7. Snapper and snapshots
+### 6. Snapper and snapshots
 > Alright, all the efforts we put into btrfs and subvolumes, will help us now.
 
 By now, you must be aware of the btrfs snapshot feature. There is a tool developed by OpenSuse know as [snapper](https://github.com/openSUSE/snapper) which is a helper application for this purpose. 
