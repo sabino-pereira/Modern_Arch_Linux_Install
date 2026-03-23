@@ -315,7 +315,7 @@ This is the subvolume layout I personally use, and which has worked well for me:
 | ----------------- | ----------- | ------- |
 | @ | / | The root folder, which is also a separate subvolume below the BTRFS Root volume, and which we will rollback in case of any issues. |
 | @home | /home |  Home Folder where all your Data/Games/Configurations will reside. |
-| @mozilla | /home/$USER/.mozilla | The directory where your firefox data is stored. If you ever rollback your home directory, this will prevent any potential loss of browser data. |
+| @mozilla | /home/$USER/.config/mozilla | The directory where your firefox data is stored. If you ever rollback your home directory, this will prevent any potential loss of browser data. |
 | @ssh | /home/$USER/.ssh | Same as above, to protect any ssh keys/configs you have. |
 | @games| /home/$USER/Games | All my games will be installed here to avoid issues when rolling back home. |
 | @opt | /opt |  This is where third party applications are installed.|
@@ -553,9 +553,10 @@ arch-chroot /mnt
 
 4. Mount 3 of the remaining 5 subvolumes, (replace sabino with whatever username you chose):
 	```
-	mkdir /home/sabino/{.mozilla,.ssh,Games}
+	mkdir /home/sabino/{.ssh,Games}
+	mkdir -p /home/sabino/.config/mozilla
  	chown -R sabino:sabino /home/sabino/*
-	mount -o subvol=@mozilla /dev/mapper/root /home/sabino/.mozilla
+	mount -o subvol=@mozilla /dev/mapper/root /home/sabino/.config/mozilla
 	mount -o subvol=@ssh /dev/mapper/root /home/sabino/.ssh
 	mount -o subvol=@games /dev/mapper/root /home/sabino/Games
 	chown -R sabino:sabino /home/sabino/*
