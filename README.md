@@ -837,7 +837,7 @@ substitue \<wifi-name> for wifi name and enter password to connect.
 	rm -rf yay
 	```
 	
-	>After this step, you will be able to use the command *yay -S \<package-name>* to install a package from the [AUR](https://aur.archlinux.org/). Be very careful when installing packages from there. These packages are provided by the community and there is not official vetting from the Arch team. There have been instances of [AUR packages containing malicious code](https://archlinux.org/news/active-aur-malicious-packages-incident/) so use it at your own risk, or avoid it completely if you don't know how it works and how to check the pkgbuild. 
+	>After this step, you will be able to use the command *yay -S \<package-name>* to install a package from the [AUR](https://aur.archlinux.org/). Be very careful when installing packages from there. These packages are provided by the community and there is no official vetting from the Arch team. There have been instances of [AUR packages containing malicious code](https://archlinux.org/news/active-aur-malicious-packages-incident/) so use it at your own risk, or avoid it completely if you don't know how it works and how to check the pkgbuild. 
 
 4. Audio
 		
